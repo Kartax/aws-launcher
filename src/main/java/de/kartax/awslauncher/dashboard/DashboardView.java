@@ -35,7 +35,7 @@ public class DashboardView extends VerticalLayout {
     public static Map<String, Double> typeSpotPriceMap() {
         Map<String, Double> instanceTypeMap = new HashMap<>();
         instanceTypeMap.put("g4dn.xlarge", 0.30);
-        instanceTypeMap.put("g4dn.2xlarge", 0.50);
+        //instanceTypeMap.put("g4dn.2xlarge", 0.50);
         instanceTypeMap.put("g5.2xlarge", 0.60);
         return instanceTypeMap;
     }
@@ -51,6 +51,7 @@ public class DashboardView extends VerticalLayout {
     private final Grid<Snapshot> snapshots;
     private final TextField nameInput = new TextField("Name","GamingRig","Name");
     private final NumberField maxSpotPrice = new NumberField("max Spot Price");
+    private final Button launchButton = new Button("Launch");
     private final ComboBox<String> instanceTypeComboBox = new ComboBox<>("Instance Type");
 
     public DashboardView(DashboardEventService eventService, AwsBackgroundTask awsBackgroundTask, AwsService awsService) {
@@ -66,12 +67,11 @@ public class DashboardView extends VerticalLayout {
         instanceTypeComboBox.setRequired(true);
         instanceTypeComboBox.addValueChangeListener(event -> maxSpotPrice.setValue(typeSpotPriceMap().get(event.getValue())));
 
-        maxSpotPrice.setMin(0.3);
-        maxSpotPrice.setMax(0.9);
+        maxSpotPrice.setMin(0.1);
+        maxSpotPrice.setMax(1.0);
         maxSpotPrice.setStep(0.01);
         maxSpotPrice.setValue(0.3);
         maxSpotPrice.setRequired(true);
-        Button launchButton = new Button("Launch");
         launchButton.addClickListener(clickEvent -> launchInstance());
         HorizontalLayout controls = new HorizontalLayout(nameInput, instanceTypeComboBox, maxSpotPrice, launchButton);
         controls.setAlignItems(Alignment.BASELINE);
@@ -174,6 +174,12 @@ public class DashboardView extends VerticalLayout {
             if(event.getMessage() != null)      logMessage(event.getMessage());
             if(event.getInstances() != null) {
                 this.instances.setItems(event.getInstances());
+                // check if any of the instances is running, starting or pending
+                if(event.getInstances().stream().anyMatch(instance ->
+                        instance.state().nameAsString().startsWith("running") ||
+                        instance.state().nameAsString().startsWith("pending"))){
+                    launchButton.setEnabled(false);
+                }
             }
             if(event.getVolumes() != null)      this.volumes.setItems(event.getVolumes());
             if(event.getSnapshots() != null)    this.snapshots.setItems(event.getSnapshots());
