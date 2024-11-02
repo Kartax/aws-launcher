@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -70,17 +71,14 @@ public class DashboardView extends VerticalLayout {
         H1 heading = new H1("Aws GamingRig Dashboard");
         H4 headingSub = new H4("Build: "+buildTimestamp);
         nameInput.setReadOnly(true);
-        nameInput.setRequired(true);
         instanceTypeComboBox.setItems(typeSpotPriceMap().keySet());
         instanceTypeComboBox.setValue("g4dn.xlarge");
-        instanceTypeComboBox.setRequired(true);
         instanceTypeComboBox.addValueChangeListener(event -> maxSpotPrice.setValue(typeSpotPriceMap().get(event.getValue())));
 
         maxSpotPrice.setMin(0.1);
         maxSpotPrice.setMax(1.0);
         maxSpotPrice.setStep(0.01);
         maxSpotPrice.setValue(0.3);
-        maxSpotPrice.setRequired(true);
         launchButton.addClickListener(clickEvent -> launchInstance());
         HorizontalLayout controls = new HorizontalLayout(nameInput, instanceTypeComboBox, maxSpotPrice, launchButton);
         controls.setAlignItems(Alignment.BASELINE);
@@ -102,6 +100,7 @@ public class DashboardView extends VerticalLayout {
         volumes.addColumn(Volume::stateAsString).setHeader("State").setAutoWidth(true);
         snapshots = new Grid<>();
         snapshots.addColumn(DashboardView::getNameOrId).setHeader("Snapshot").setAutoWidth(true);
+        snapshots.addColumn(DashboardView::getStartDateTime).setHeader("Started").setAutoWidth(true);
         snapshots.addColumn(Snapshot::stateAsString).setHeader("State").setAutoWidth(true);
         snapshots.addColumn(Snapshot::progress).setHeader("State").setAutoWidth(true);
         HorizontalLayout lists = new HorizontalLayout(instances, volumes, snapshots);
@@ -109,6 +108,12 @@ public class DashboardView extends VerticalLayout {
 
         add(heading, headingSub, controls, logArea, lists);
         setSizeFull();
+    }
+
+    private static String getStartDateTime(Snapshot snapshot) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyy HH:mm")
+                .withZone(ZoneId.systemDefault());
+        return formatter.format(snapshot.startTime());
     }
 
     private static String getNameOrId(Instance instance) {
