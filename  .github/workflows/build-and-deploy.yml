@@ -3,7 +3,7 @@ name: Build app, image and push to registry
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build:
