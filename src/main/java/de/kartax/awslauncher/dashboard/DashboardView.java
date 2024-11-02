@@ -15,6 +15,7 @@ import com.vaadin.flow.component.grid.Grid;
 import de.kartax.awslauncher.aws.AwsBackgroundTask;
 import de.kartax.awslauncher.aws.AwsService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import software.amazon.awssdk.services.ec2.model.Instance;
 import software.amazon.awssdk.services.ec2.model.Snapshot;
 import software.amazon.awssdk.services.ec2.model.Tag;
@@ -37,6 +38,8 @@ public class DashboardView extends VerticalLayout {
 
     private static final int MAX_LOG_SIZE = 100;
     private static final String FILE_LOG_MESSAGES = "logMessages.txt";
+    @Value("${BUILD_TIMESTAMP}")
+    private String buildTimestamp;
 
     public static Map<String, Double> typeSpotPriceMap() {
         Map<String, Double> instanceTypeMap = new HashMap<>();
@@ -65,7 +68,7 @@ public class DashboardView extends VerticalLayout {
         this.awsBackgroundTask = awsBackgroundTask;
         this.awsService = awsService;
 
-        H1 heading = new H1("Aws GamingRig Dashboard");
+        H1 heading = new H1("Aws GamingRig Dashboard - BUILD: "+buildTimestamp);
         nameInput.setReadOnly(true);
         nameInput.setRequired(true);
         instanceTypeComboBox.setItems(typeSpotPriceMap().keySet());
@@ -210,6 +213,8 @@ public class DashboardView extends VerticalLayout {
                         instance.state().nameAsString().startsWith("running") ||
                         instance.state().nameAsString().startsWith("pending"))){
                     launchButton.setEnabled(false);
+                }else {
+                    launchButton.setEnabled(true);
                 }
             }
             if(event.getVolumes() != null){
