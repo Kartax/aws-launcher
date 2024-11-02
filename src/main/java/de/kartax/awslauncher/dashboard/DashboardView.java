@@ -47,8 +47,8 @@ public class DashboardView extends VerticalLayout {
     public static Map<String, Double> typeSpotPriceMap() {
         Map<String, Double> instanceTypeMap = new HashMap<>();
         instanceTypeMap.put("g4dn.xlarge", 0.30);
-        //instanceTypeMap.put("g4dn.2xlarge", 0.50);
-        instanceTypeMap.put("g5.2xlarge", 0.60);
+        instanceTypeMap.put("g4dn.2xlarge", 0.50);
+        instanceTypeMap.put("g5.2xlarge", 0.58);
         return instanceTypeMap;
     }
 
