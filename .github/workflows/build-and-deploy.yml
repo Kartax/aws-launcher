@@ -31,4 +31,4 @@ jobs:
           github-token: '${{ secrets.TOKEN_READ_PUSH_PACKAGES }}'
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/aws-launcher:latest
+          tags: ghcr.io/kartax/aws-launcher:latest
