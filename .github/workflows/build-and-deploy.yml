@@ -28,7 +28,6 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.9.0
         with:
-          github-token: '${{ secrets.TOKEN_READ_PUSH_PACKAGES }}'
           context: .
           push: true
           tags: ghcr.io/kartax/aws-launcher:latest
