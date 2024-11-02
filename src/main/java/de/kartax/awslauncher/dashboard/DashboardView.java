@@ -20,6 +20,11 @@ import software.amazon.awssdk.services.ec2.model.Snapshot;
 import software.amazon.awssdk.services.ec2.model.Tag;
 import software.amazon.awssdk.services.ec2.model.Volume;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -31,6 +36,7 @@ import java.util.Map;
 public class DashboardView extends VerticalLayout {
 
     private static final int MAX_LOG_SIZE = 100;
+    private static final String FILE_LOG_MESSAGES = "logMessages.txt";
 
     public static Map<String, Double> typeSpotPriceMap() {
         Map<String, Double> instanceTypeMap = new HashMap<>();
@@ -139,8 +145,30 @@ public class DashboardView extends VerticalLayout {
             logMessages.removeFirst();
         }
         logMessages.add(logEntry);
-
+        saveLogMessages();
         updateLogArea();
+    }
+
+    private void saveLogMessages() {
+        try {
+            Path logFilePath = Paths.get(FILE_LOG_MESSAGES);
+            Files.write(logFilePath, logMessages);
+        } catch (IOException e) {
+            log.error("Error saving log messages", e);
+        }
+    }
+
+    private void loadLogMessages() {
+        try {
+            Path logFilePath = Paths.get("logMessages.txt");
+            if (Files.exists(logFilePath)) {
+                logMessages.clear();
+                logMessages.addAll(Files.readAllLines(logFilePath));
+                updateLogArea();
+            }
+        } catch (IOException e) {
+            log.error("Error loading log messages", e);
+        }
     }
 
     private void updateLogArea() {
@@ -156,6 +184,7 @@ public class DashboardView extends VerticalLayout {
     protected void onAttach(AttachEvent attachEvent) {
         log.debug("onAttach");
         super.onAttach(attachEvent);
+        loadLogMessages();
         eventService.register(this);
         awsBackgroundTask.changeIntervalInSeconds(10);
     }
@@ -171,7 +200,9 @@ public class DashboardView extends VerticalLayout {
     public void handleUpdate(DashboardUpdateEvent event) {
         log.debug("handleUpdate");
         getUI().ifPresent(ui -> ui.access(() -> {
-            if(event.getMessage() != null)      logMessage(event.getMessage());
+            if(event.getMessage() != null){
+                logMessage(event.getMessage());
+            }
             if(event.getInstances() != null) {
                 this.instances.setItems(event.getInstances());
                 // check if any of the instances is running, starting or pending
@@ -181,8 +212,12 @@ public class DashboardView extends VerticalLayout {
                     launchButton.setEnabled(false);
                 }
             }
-            if(event.getVolumes() != null)      this.volumes.setItems(event.getVolumes());
-            if(event.getSnapshots() != null)    this.snapshots.setItems(event.getSnapshots());
+            if(event.getVolumes() != null){
+                this.volumes.setItems(event.getVolumes());
+            }
+            if(event.getSnapshots() != null) {
+                this.snapshots.setItems(event.getSnapshots());
+            }
             ui.push();
         }));
     }
