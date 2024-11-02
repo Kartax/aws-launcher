@@ -5,6 +5,7 @@ import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
@@ -22,7 +23,6 @@ import software.amazon.awssdk.services.ec2.model.Tag;
 import software.amazon.awssdk.services.ec2.model.Volume;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
@@ -38,8 +38,7 @@ public class DashboardView extends VerticalLayout {
 
     private static final int MAX_LOG_SIZE = 100;
     private static final String FILE_LOG_MESSAGES = "logMessages.txt";
-    @Value("${BUILD_TIMESTAMP}")
-    private String buildTimestamp;
+
 
     public static Map<String, Double> typeSpotPriceMap() {
         Map<String, Double> instanceTypeMap = new HashMap<>();
@@ -63,12 +62,13 @@ public class DashboardView extends VerticalLayout {
     private final Button launchButton = new Button("Launch");
     private final ComboBox<String> instanceTypeComboBox = new ComboBox<>("Instance Type");
 
-    public DashboardView(DashboardEventService eventService, AwsBackgroundTask awsBackgroundTask, AwsService awsService) {
+    public DashboardView(@Value("${BUILD_TIMESTAMP}") String buildTimestamp, DashboardEventService eventService, AwsBackgroundTask awsBackgroundTask, AwsService awsService) {
         this.eventService = eventService;
         this.awsBackgroundTask = awsBackgroundTask;
         this.awsService = awsService;
 
-        H1 heading = new H1("Aws GamingRig Dashboard - BUILD: "+buildTimestamp);
+        H1 heading = new H1("Aws GamingRig Dashboard");
+        H4 headingSub = new H4("Build: "+buildTimestamp);
         nameInput.setReadOnly(true);
         nameInput.setRequired(true);
         instanceTypeComboBox.setItems(typeSpotPriceMap().keySet());
@@ -107,7 +107,7 @@ public class DashboardView extends VerticalLayout {
         HorizontalLayout lists = new HorizontalLayout(instances, volumes, snapshots);
         lists.setWidthFull();
 
-        add(heading, controls, logArea, lists);
+        add(heading, headingSub, controls, logArea, lists);
         setSizeFull();
     }
 
@@ -209,13 +209,9 @@ public class DashboardView extends VerticalLayout {
             if(event.getInstances() != null) {
                 this.instances.setItems(event.getInstances());
                 // check if any of the instances is running, starting or pending
-                if(event.getInstances().stream().anyMatch(instance ->
-                        instance.state().nameAsString().startsWith("running") ||
-                        instance.state().nameAsString().startsWith("pending"))){
-                    launchButton.setEnabled(false);
-                }else {
-                    launchButton.setEnabled(true);
-                }
+                launchButton.setEnabled(event.getInstances().stream().noneMatch(instance ->
+                                instance.state().nameAsString().startsWith("running") ||
+                                instance.state().nameAsString().startsWith("pending")));
             }
             if(event.getVolumes() != null){
                 this.volumes.setItems(event.getVolumes());
