@@ -5,7 +5,7 @@ import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
@@ -23,6 +23,8 @@ import software.amazon.awssdk.services.ec2.model.Tag;
 import software.amazon.awssdk.services.ec2.model.Volume;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
@@ -39,6 +41,7 @@ public class DashboardView extends VerticalLayout {
 
     private static final int MAX_LOG_SIZE = 100;
     private static final String FILE_LOG_MESSAGES = "logMessages.txt";
+    private static final String CURRENT_MONTH_COST_PREFIX = "Current month: ";
 
 
     public static Map<String, Double> typeSpotPriceMap() {
@@ -62,19 +65,24 @@ public class DashboardView extends VerticalLayout {
     private final NumberField maxSpotPrice = new NumberField("max Spot Price");
     private final Button launchButton = new Button("Launch");
     private final ComboBox<String> instanceTypeComboBox = new ComboBox<>("Instance Type");
+    private final Span costBadge = new Span(CURRENT_MONTH_COST_PREFIX );
 
     public DashboardView(@Value("${BUILD_TIMESTAMP}") String buildTimestamp, DashboardEventService eventService, AwsBackgroundTask awsBackgroundTask, AwsService awsService) {
         this.eventService = eventService;
         this.awsBackgroundTask = awsBackgroundTask;
         this.awsService = awsService;
 
-        H1 heading = new H1("Aws GamingRig Dashboard");
-        H4 headingSub = new H4("Build: "+buildTimestamp);
+        var heading = new H1("Aws GamingRig Dashboard");
+
+        Span buildBadge = new Span("Build: "+buildTimestamp);
+        buildBadge.getElement().getThemeList().add("badge");
+        costBadge.getElement().getThemeList().add("badge");
+        var badges = new HorizontalLayout(buildBadge, costBadge);
+
         nameInput.setReadOnly(true);
         instanceTypeComboBox.setItems(typeSpotPriceMap().keySet());
         instanceTypeComboBox.setValue("g4dn.xlarge");
         instanceTypeComboBox.addValueChangeListener(event -> maxSpotPrice.setValue(typeSpotPriceMap().get(event.getValue())));
-
         maxSpotPrice.setMin(0.1);
         maxSpotPrice.setMax(1.0);
         maxSpotPrice.setStep(0.01);
@@ -106,7 +114,7 @@ public class DashboardView extends VerticalLayout {
         HorizontalLayout lists = new HorizontalLayout(instances, volumes, snapshots);
         lists.setWidthFull();
 
-        add(heading, headingSub, controls, logArea, lists);
+        add(heading, badges, controls, logArea, lists);
         setSizeFull();
     }
 
@@ -223,6 +231,17 @@ public class DashboardView extends VerticalLayout {
             }
             if(event.getSnapshots() != null) {
                 this.snapshots.setItems(event.getSnapshots());
+            }
+            if(event.getCurrentMonthCost() != null){
+                var cost = BigDecimal.valueOf(event.getCurrentMonthCost()).setScale(2, RoundingMode.HALF_UP);
+                if(cost.doubleValue() > 40){
+                    costBadge.getElement().getThemeList().add("error");
+                    costBadge.getElement().getThemeList().remove("success");
+                }else{
+                    costBadge.getElement().getThemeList().add("success");
+                    costBadge.getElement().getThemeList().remove("error");
+                }
+                costBadge.setText(CURRENT_MONTH_COST_PREFIX + cost + " $");
             }
             ui.push();
         }));

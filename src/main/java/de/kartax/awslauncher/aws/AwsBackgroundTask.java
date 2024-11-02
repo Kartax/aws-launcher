@@ -6,11 +6,18 @@ import de.kartax.awslauncher.dashboard.DashboardUpdateEvent;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.costexplorer.CostExplorerClient;
+import software.amazon.awssdk.services.costexplorer.model.DateInterval;
+import software.amazon.awssdk.services.costexplorer.model.GetCostAndUsageRequest;
+import software.amazon.awssdk.services.costexplorer.model.GetCostAndUsageResponse;
+import software.amazon.awssdk.services.costexplorer.model.Granularity;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 import org.springframework.scheduling.TaskScheduler;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ScheduledFuture;
 
 import java.util.List;
@@ -23,15 +30,17 @@ public class AwsBackgroundTask {
     private final TaskScheduler taskScheduler;
     private final DashboardEventService eventService;
     private final Ec2Client ec2Client;
+    private final CostExplorerClient costExplorerClient;
 
     private ScheduledFuture<?> scheduledFuture;
     private int intervalInSeconds;
 
 
-    public AwsBackgroundTask(TaskScheduler taskScheduler, DashboardEventService eventService, Ec2Client ec2Client) {
+    public AwsBackgroundTask(TaskScheduler taskScheduler, DashboardEventService eventService, Ec2Client ec2Client, CostExplorerClient costExplorerClient) {
         this.taskScheduler = taskScheduler;
         this.eventService = eventService;
         this.ec2Client = ec2Client;
+        this.costExplorerClient = costExplorerClient;
     }
 
     @PostConstruct
@@ -78,6 +87,11 @@ public class AwsBackgroundTask {
         } catch (Ec2Exception e) {
             event.appendMessage(e.getMessage());
         }
+        try {
+            event.setCurrentMonthCost(getCurrentMonthCost());
+        } catch (Exception e) {
+            event.appendMessage(e.getMessage());
+        }
         eventService.broadcastEvent(event);
     }
 
@@ -110,5 +124,29 @@ public class AwsBackgroundTask {
                 .stream()
                 .flatMap(response -> response.snapshots().stream())
                 .collect(Collectors.toList());
+    }
+
+    public double getCurrentMonthCost() {
+        log.debug("getCurrentMonthCost");
+
+        LocalDate now = LocalDate.now();
+        String startOfMonth = now.withDayOfMonth(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String endOfMonth = now.format(DateTimeFormatter.ISO_LOCAL_DATE);
+
+        GetCostAndUsageRequest request = GetCostAndUsageRequest.builder()
+                .timePeriod(DateInterval.builder()
+                        .start(startOfMonth)
+                        .end(endOfMonth)
+                        .build())
+                .granularity(Granularity.MONTHLY)
+                .metrics("UnblendedCost")
+                .build();
+
+        GetCostAndUsageResponse response = costExplorerClient.getCostAndUsage(request);
+
+        return response.resultsByTime().stream()
+                .flatMap(resultByTime -> resultByTime.total().values().stream())
+                .mapToDouble(metricValue -> Double.parseDouble(metricValue.amount()))
+                .sum();
     }
 }

@@ -16,6 +16,7 @@ public class DashboardUpdateEvent extends ApplicationEvent {
     private List<Instance> instances;
     private List<Volume> volumes;
     private List<Snapshot> snapshots;
+    private Double currentMonthCost;
 
     public DashboardUpdateEvent(Object source) {
         super(source);

@@ -7,7 +7,8 @@ import com.vaadin.flow.theme.Theme;
 import com.vaadin.flow.theme.lumo.Lumo;
 
 @Push
-@Theme(themeClass = Lumo.class, variant = Lumo.DARK)
+//@Theme(themeClass = Lumo.class, variant = Lumo.DARK)
+@Theme(value="my-theme", variant=Lumo.DARK)
 @PWA(name = "AWSLauncher", shortName = "AWSL")
 public class AppShell implements AppShellConfigurator {
 
