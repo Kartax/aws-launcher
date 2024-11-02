@@ -1,0 +1,30 @@
+# general
+.gradle
+.idea
+build/
+
+
+# sepcific
+application-local.properties
+
+
+# vaadin excludes
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+node_modules/
+src/main/frontend/generated/
+pnpmfile.js
+.npmrc
+webpack.generated.js
+vite.generated.ts
+drivers/
+error-screenshots/
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
