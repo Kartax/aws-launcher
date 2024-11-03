@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.costexplorer.CostExplorerClient;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.sfn.SfnClient;
 
@@ -45,9 +45,9 @@ public class AwsConfig {
     }
 
     @Bean
-    public CostExplorerClient costExplorerClient() {
+    public CloudWatchClient cloudWatchClient() {
         AwsBasicCredentials awsCreds = AwsBasicCredentials.create(awsAccessKeyId, awsSecretAccessKey);
-        return CostExplorerClient.builder()
+        return CloudWatchClient.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .region(Region.of(awsRegion))
                 .build();

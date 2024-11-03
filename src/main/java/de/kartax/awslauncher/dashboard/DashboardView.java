@@ -202,7 +202,7 @@ public class DashboardView extends VerticalLayout {
         super.onAttach(attachEvent);
         loadLogMessages();
         eventService.register(this);
-        awsBackgroundTask.changeIntervalInSeconds(10);
+        awsBackgroundTask.run();
     }
 
     @Override
@@ -210,7 +210,6 @@ public class DashboardView extends VerticalLayout {
         log.debug("onDetach");
         eventService.unregister(this);
         super.onDetach(detachEvent);
-        awsBackgroundTask.resetIntervalInSeconds();
     }
 
     public void handleUpdate(DashboardUpdateEvent event) {
