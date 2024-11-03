@@ -7,6 +7,7 @@ import software.amazon.awssdk.services.ec2.model.Instance;
 import software.amazon.awssdk.services.ec2.model.Snapshot;
 import software.amazon.awssdk.services.ec2.model.Volume;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -16,7 +17,7 @@ public class DashboardUpdateEvent extends ApplicationEvent {
     private List<Instance> instances;
     private List<Volume> volumes;
     private List<Snapshot> snapshots;
-    private Double currentMonthCost;
+    private List<BigDecimal> currentMonthCost;
 
     public DashboardUpdateEvent(Object source) {
         super(source);

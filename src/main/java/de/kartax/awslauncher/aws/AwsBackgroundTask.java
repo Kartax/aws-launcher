@@ -1,22 +1,21 @@
 package de.kartax.awslauncher.aws;
 
 
+import de.kartax.awslauncher.config.AwsConfig;
 import de.kartax.awslauncher.dashboard.DashboardEventService;
 import de.kartax.awslauncher.dashboard.DashboardUpdateEvent;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
-import software.amazon.awssdk.services.cloudwatch.model.Datapoint;
-import software.amazon.awssdk.services.cloudwatch.model.GetMetricStatisticsRequest;
-import software.amazon.awssdk.services.cloudwatch.model.Statistic;
+import software.amazon.awssdk.services.budgets.BudgetsClient;
+import software.amazon.awssdk.services.budgets.model.DescribeBudgetsRequest;
+import software.amazon.awssdk.services.budgets.model.DescribeBudgetsResponse;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 import org.springframework.scheduling.TaskScheduler;
 
+import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ScheduledFuture;
 
 import java.util.List;
@@ -29,16 +28,18 @@ public class AwsBackgroundTask {
     private final TaskScheduler taskScheduler;
     private final DashboardEventService eventService;
     private final Ec2Client ec2Client;
-    private final CloudWatchClient cloudWatchClient;
+    private final AwsConfig awsConfig;
+    private final BudgetsClient budgetsClient;
 
     private ScheduledFuture<?> scheduledFuture;
 
 
-    public AwsBackgroundTask(TaskScheduler taskScheduler, DashboardEventService eventService, Ec2Client ec2Client, CloudWatchClient cloudWatchClient) {
+    public AwsBackgroundTask(TaskScheduler taskScheduler, DashboardEventService eventService, Ec2Client ec2Client, AwsConfig awsConfig, BudgetsClient budgetsClient) {
         this.taskScheduler = taskScheduler;
         this.eventService = eventService;
         this.ec2Client = ec2Client;
-        this.cloudWatchClient = cloudWatchClient;
+        this.awsConfig = awsConfig;
+        this.budgetsClient = budgetsClient;
     }
 
     @PostConstruct
@@ -111,20 +112,17 @@ public class AwsBackgroundTask {
                 .collect(Collectors.toList());
     }
 
-    public double getCurrentMonthCost() {
-        Instant endTime = Instant.now();
-        Instant startTime = endTime.minus(1, ChronoUnit.DAYS);
-
-        GetMetricStatisticsRequest request = GetMetricStatisticsRequest.builder()
-                .namespace("AWS/Billing")
-                .metricName("EstimatedCharges")
-                .startTime(startTime)
-                .endTime(endTime)
-                .period(86400)
-                .statistics(Statistic.MAXIMUM)
+    public List<BigDecimal> getCurrentMonthCost() {
+        log.debug("getCurrentMonthCost");
+        DescribeBudgetsRequest request = DescribeBudgetsRequest.builder()
+                .accountId(awsConfig.getBudgetAccountId())
                 .build();
 
-        List<Datapoint> datapoints = cloudWatchClient.getMetricStatistics(request).datapoints();
-        return datapoints.isEmpty() ? 0.0 : datapoints.get(0).maximum();
+        DescribeBudgetsResponse response = budgetsClient.describeBudgets(request);
+
+        return response.budgets().stream()
+                .filter(budget -> budget.budgetName().equals(awsConfig.getBudgetName()))
+                .findFirst().map(budget -> List.of(budget.calculatedSpend().actualSpend().amount(), budget.budgetLimit().amount()))
+                .orElse(List.of(BigDecimal.ZERO, BigDecimal.ZERO));
     }
 }

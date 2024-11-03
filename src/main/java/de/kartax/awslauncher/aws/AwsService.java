@@ -15,10 +15,12 @@ public class AwsService {
 
     private final DashboardEventService eventService;
     private final SfnClient sfnClient;
+    private final AwsBackgroundTask awsBackgroundTask;
 
-    public AwsService(DashboardEventService eventService, SfnClient sfnClient) {
+    public AwsService(DashboardEventService eventService, SfnClient sfnClient, AwsBackgroundTask awsBackgroundTask) {
         this.eventService = eventService;
         this.sfnClient = sfnClient;
+        this.awsBackgroundTask = awsBackgroundTask;
     }
 
     public void launch(String name, String instanceType, Double maxSpotPrice){
@@ -36,6 +38,7 @@ public class AwsService {
             StartExecutionResponse response = sfnClient.startExecution(request);
             log.debug("Started state machine execution with ARN: {}", response.executionArn());
             eventService.broadcastMessageOnlyEvent(this, "Started state machine execution with ARN: "+response.executionArn());
+            awsBackgroundTask.run(); // trigger backgroundTask to run
         } catch (Exception e) {
             log.debug("Error launching: ", e);
             eventService.broadcastMessageOnlyEvent(this, "ERROR:: "+e.getMessage());

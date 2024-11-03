@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.ec2.model.Tag;
 import software.amazon.awssdk.services.ec2.model.Volume;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -232,15 +231,17 @@ public class DashboardView extends VerticalLayout {
                 this.snapshots.setItems(event.getSnapshots());
             }
             if(event.getCurrentMonthCost() != null){
-                var cost = BigDecimal.valueOf(event.getCurrentMonthCost()).setScale(2, RoundingMode.HALF_UP);
-                if(cost.doubleValue() > 40){
+                var spend = event.getCurrentMonthCost().get(0).setScale(2, RoundingMode.HALF_UP).doubleValue();
+                var limit = event.getCurrentMonthCost().get(1).setScale(2, RoundingMode.HALF_UP).doubleValue();
+                var cost = spend + "$ / " + limit + "$";
+                if(spend > limit){
                     costBadge.getElement().getThemeList().add("error");
                     costBadge.getElement().getThemeList().remove("success");
                 }else{
                     costBadge.getElement().getThemeList().add("success");
                     costBadge.getElement().getThemeList().remove("error");
                 }
-                costBadge.setText(CURRENT_MONTH_COST_PREFIX + cost + " $");
+                costBadge.setText(CURRENT_MONTH_COST_PREFIX + cost);
             }
             ui.push();
         }));
