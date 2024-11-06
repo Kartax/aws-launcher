@@ -7,6 +7,8 @@ import software.amazon.awssdk.services.sfn.SfnClient;
 import software.amazon.awssdk.services.sfn.model.StartExecutionRequest;
 import software.amazon.awssdk.services.sfn.model.StartExecutionResponse;
 
+import java.time.Duration;
+
 @Slf4j
 @Service
 public class AwsService {
@@ -38,7 +40,10 @@ public class AwsService {
             StartExecutionResponse response = sfnClient.startExecution(request);
             log.debug("Started state machine execution with ARN: {}", response.executionArn());
             eventService.broadcastMessageOnlyEvent(this, "Started state machine execution with ARN: "+response.executionArn());
-            awsBackgroundTask.run(); // trigger backgroundTask to run
+
+            awsBackgroundTask.runOnceDelayed(Duration.ofSeconds(5));
+
+
         } catch (Exception e) {
             log.debug("Error launching: ", e);
             eventService.broadcastMessageOnlyEvent(this, "ERROR:: "+e.getMessage());

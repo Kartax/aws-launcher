@@ -16,6 +16,7 @@ import org.springframework.scheduling.TaskScheduler;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.ScheduledFuture;
 
 import java.util.List;
@@ -44,15 +45,30 @@ public class AwsBackgroundTask {
 
     @PostConstruct
     public void start() {
-        scheduleTask();
+        scheduleHourlyTask();
     }
 
-    private void scheduleTask() {
-        log.debug("scheduling task");
+    private void scheduleHourlyTask() {
+        log.debug("scheduleHourlyTask");
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
         }
         scheduledFuture = taskScheduler.scheduleAtFixedRate(this::run, Duration.ofHours(1));
+    }
+
+    public void runOnceDelayed(Duration delay) {
+        log.debug("runOnceDelayed");
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
+        }
+
+        // Schedule the single delayed run
+        scheduledFuture = taskScheduler.schedule(() -> {
+            // Run the task once
+            run();
+            // Reschedule the regular task after the single run
+            scheduleHourlyTask();
+        }, Instant.now().plus(delay));
     }
 
     public void run() {

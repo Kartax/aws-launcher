@@ -11,11 +11,11 @@ Be sure to provide following environment variables:
 ## docker run
 ```
 docker run -d -p 8080:8080 \
-  -e AWS_ACCESS_KEY_ID="my-key" \
-  -e AWS_SECRET_ACCESS_KEY="my-secret" \
-  -e AWS_REGION="eu-central-1" \
-  -e AWS_BUDGET_ACCOUNT_ID="12345678" \
-  -e AWS_BUDGET_NAME="my budget" \
+  -e AWS_ACCESS_KEY_ID=my-key \
+  -e AWS_SECRET_ACCESS_KEY=my-secret \
+  -e AWS_REGION=eu-central-1 \
+  -e AWS_BUDGET_ACCOUNT_ID=12345678 \
+  -e AWS_BUDGET_NAME=my budget \
   ghcr.io/<username>/<repository>:latest
 ```
 
@@ -27,11 +27,11 @@ services:
   app:
     image: ghcr.io/<username>/<repository>:latest
     environment:
-      - AWS_ACCESS_KEY_ID="my-key"
-      - AWS_SECRET_ACCESS_KEY="my-secret"
-      - AWS_REGION="eu-central-1"
-      - AWS_BUDGET_ACCOUNT_ID="12345678
-      - AWS_BUDGET_NAME="my budget"
+      - AWS_ACCESS_KEY_ID=my-key
+      - AWS_SECRET_ACCESS_KEY=my-secret
+      - AWS_REGION=eu-central-1
+      - AWS_BUDGET_ACCOUNT_ID=12345678
+      - AWS_BUDGET_NAME=my budget
     ports:
       - "8080:8080"
 

@@ -13,6 +13,7 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.kartax.awslauncher.aws.AwsBackgroundTask;
 import de.kartax.awslauncher.aws.AwsService;
 import lombok.extern.slf4j.Slf4j;
@@ -89,6 +90,11 @@ public class DashboardView extends VerticalLayout {
         launchButton.addClickListener(clickEvent -> launchInstance());
         HorizontalLayout controls = new HorizontalLayout(nameInput, instanceTypeComboBox, maxSpotPrice, launchButton);
         controls.setAlignItems(Alignment.BASELINE);
+        controls.addClassNames(LumoUtility.AlignItems.Breakpoint.Small.BASELINE,
+                LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.FlexDirection.Breakpoint.Small.ROW,
+                LumoUtility.Gap.MEDIUM);
 
 
         logArea = new TextArea("Logs");
@@ -111,6 +117,11 @@ public class DashboardView extends VerticalLayout {
         snapshots.addColumn(Snapshot::stateAsString).setHeader("State").setAutoWidth(true);
         snapshots.addColumn(Snapshot::progress).setHeader("State").setAutoWidth(true);
         HorizontalLayout lists = new HorizontalLayout(instances, volumes, snapshots);
+        lists.addClassNames(LumoUtility.AlignItems.Breakpoint.Large.BASELINE,
+                            LumoUtility.Display.FLEX,
+                            LumoUtility.FlexDirection.COLUMN,
+                            LumoUtility.FlexDirection.Breakpoint.Large.ROW,
+                            LumoUtility.Gap.MEDIUM);
         lists.setWidthFull();
 
         add(heading, badges, controls, logArea, lists);
