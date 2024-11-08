@@ -46,9 +46,10 @@ public class DashboardView extends VerticalLayout {
 
     public static Map<String, Double> typeSpotPriceMap() {
         Map<String, Double> instanceTypeMap = new HashMap<>();
-        instanceTypeMap.put("g4dn.xlarge", 0.30);
-        instanceTypeMap.put("g4dn.2xlarge", 0.50);
-        instanceTypeMap.put("g5.2xlarge", 0.58);
+        instanceTypeMap.put("g4dn.xlarge", 0.29); // Nvidia T4 - GTX 1080
+        instanceTypeMap.put("g4dn.2xlarge", 0.50); // Nvidia T4 - GTX 1080
+        instanceTypeMap.put("g6.2xlarge", 0.55); // Nvidia L4 - RTX 4060
+        instanceTypeMap.put("g5.2xlarge", 0.57); // Nvidia A10G RTX 3080
         return instanceTypeMap;
     }
 
