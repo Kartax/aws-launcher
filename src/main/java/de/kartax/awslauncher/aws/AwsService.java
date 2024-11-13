@@ -39,7 +39,7 @@ public class AwsService {
 
             StartExecutionResponse response = sfnClient.startExecution(request);
             log.debug("Started state machine execution with ARN: {}", response.executionArn());
-            eventService.broadcastMessageOnlyEvent(this, "Started state machine execution with ARN: "+response.executionArn());
+            eventService.broadcastMessageOnlyEvent(this, "Started state machine execution");
 
             awsBackgroundTask.runOnceDelayed(Duration.ofSeconds(5));
 

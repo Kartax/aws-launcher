@@ -108,24 +108,27 @@ public class DashboardView extends VerticalLayout {
         instances.addColumn(DashboardView::getNameOrId).setHeader("Instance").setAutoWidth(true);
         instances.addColumn(Instance::instanceType).setHeader("Type").setAutoWidth(true);
         instances.addColumn(instance -> instance.state().nameAsString()).setHeader("State").setAutoWidth(true);
+
         volumes = new Grid<>();
         volumes.addColumn(DashboardView::getNameOrId).setHeader("Volume").setAutoWidth(true);
         volumes.addColumn(Volume::size).setHeader("Size").setAutoWidth(true);
         volumes.addColumn(Volume::stateAsString).setHeader("State").setAutoWidth(true);
+
         snapshots = new Grid<>();
         snapshots.addColumn(DashboardView::getNameOrId).setHeader("Snapshot").setAutoWidth(true);
         snapshots.addColumn(DashboardView::getStartDateTime).setHeader("Started").setAutoWidth(true);
         snapshots.addColumn(Snapshot::stateAsString).setHeader("State").setAutoWidth(true);
         snapshots.addColumn(Snapshot::progress).setHeader("State").setAutoWidth(true);
-        HorizontalLayout lists = new HorizontalLayout(instances, volumes, snapshots);
-        lists.addClassNames(LumoUtility.AlignItems.Breakpoint.Large.BASELINE,
+
+        HorizontalLayout instancesAndVolumes = new HorizontalLayout(instances, volumes);
+        instancesAndVolumes.addClassNames(LumoUtility.AlignItems.Breakpoint.Large.BASELINE,
                             LumoUtility.Display.FLEX,
                             LumoUtility.FlexDirection.COLUMN,
                             LumoUtility.FlexDirection.Breakpoint.Large.ROW,
                             LumoUtility.Gap.MEDIUM);
-        lists.setWidthFull();
+        instancesAndVolumes.setWidthFull();
 
-        add(heading, badges, controls, logArea, lists);
+        add(heading, badges, controls, logArea, instancesAndVolumes, snapshots);
         setSizeFull();
     }
 
@@ -245,13 +248,18 @@ public class DashboardView extends VerticalLayout {
             if(event.getCurrentMonthCost() != null){
                 var spend = event.getCurrentMonthCost().get(0).setScale(2, RoundingMode.HALF_UP).doubleValue();
                 var limit = event.getCurrentMonthCost().get(1).setScale(2, RoundingMode.HALF_UP).doubleValue();
+                var spendWarning = spend + 10.0;
+
                 var cost = spend + "$ / " + limit + "$";
-                if(spend > limit){
+
+                costBadge.getElement().getThemeList().clear();
+                costBadge.getElement().getThemeList().add("badge");
+                if(spend > limit) {
                     costBadge.getElement().getThemeList().add("error");
-                    costBadge.getElement().getThemeList().remove("success");
+                }else if(spendWarning > limit) {
+                    costBadge.getElement().getThemeList().add("warning");
                 }else{
                     costBadge.getElement().getThemeList().add("success");
-                    costBadge.getElement().getThemeList().remove("error");
                 }
                 costBadge.setText(CURRENT_MONTH_COST_PREFIX + cost);
             }
