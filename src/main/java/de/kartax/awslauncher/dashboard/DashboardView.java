@@ -100,7 +100,7 @@ public class DashboardView extends VerticalLayout {
 
         logArea = new TextArea("Logs");
         logArea.setWidthFull();
-        logArea.setHeight("350px");
+        logArea.setHeight("300px");
         logArea.setReadOnly(true);
 
 
@@ -108,11 +108,13 @@ public class DashboardView extends VerticalLayout {
         instances.addColumn(DashboardView::getNameOrId).setHeader("Instance").setAutoWidth(true);
         instances.addColumn(Instance::instanceType).setHeader("Type").setAutoWidth(true);
         instances.addColumn(instance -> instance.state().nameAsString()).setHeader("State").setAutoWidth(true);
+        instances.setHeight("200px");
 
         volumes = new Grid<>();
         volumes.addColumn(DashboardView::getNameOrId).setHeader("Volume").setAutoWidth(true);
         volumes.addColumn(Volume::size).setHeader("Size").setAutoWidth(true);
         volumes.addColumn(Volume::stateAsString).setHeader("State").setAutoWidth(true);
+        volumes.setHeight("200px");
 
         snapshots = new Grid<>();
         snapshots.addColumn(DashboardView::getNameOrId).setHeader("Snapshot").setAutoWidth(true);
