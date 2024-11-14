@@ -100,7 +100,7 @@ public class DashboardView extends VerticalLayout {
 
         logArea = new TextArea("Logs");
         logArea.setWidthFull();
-        logArea.setHeight("150px");
+        logArea.setHeight("350px");
         logArea.setReadOnly(true);
 
 
@@ -116,9 +116,10 @@ public class DashboardView extends VerticalLayout {
 
         snapshots = new Grid<>();
         snapshots.addColumn(DashboardView::getNameOrId).setHeader("Snapshot").setAutoWidth(true);
-        snapshots.addColumn(DashboardView::getStartDateTime).setHeader("Started").setAutoWidth(true);
+        snapshots.addColumn(Snapshot::volumeSize).setHeader("Size").setAutoWidth(true);
+        snapshots.addColumn(Snapshot::progress).setHeader("Progress").setAutoWidth(true);
         snapshots.addColumn(Snapshot::stateAsString).setHeader("State").setAutoWidth(true);
-        snapshots.addColumn(Snapshot::progress).setHeader("State").setAutoWidth(true);
+        snapshots.addColumn(DashboardView::getStartDateTime).setHeader("Started").setAutoWidth(true);
 
         HorizontalLayout instancesAndVolumes = new HorizontalLayout(instances, volumes);
         instancesAndVolumes.addClassNames(LumoUtility.AlignItems.Breakpoint.Large.BASELINE,
