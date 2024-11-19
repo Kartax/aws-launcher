@@ -44,14 +44,7 @@ public class DashboardView extends VerticalLayout {
     private static final String CURRENT_MONTH_COST_PREFIX = "Current month: ";
 
 
-    public static Map<String, Double> typeSpotPriceMap() {
-        Map<String, Double> instanceTypeMap = new HashMap<>();
-        instanceTypeMap.put("g4dn.xlarge", 0.29); // Nvidia T4 - GTX 1080
-        instanceTypeMap.put("g4dn.2xlarge", 0.50); // Nvidia T4 - GTX 1080
-        instanceTypeMap.put("g6.2xlarge", 0.55); // Nvidia L4 - RTX 4060
-        instanceTypeMap.put("g5.2xlarge", 0.57); // Nvidia A10G RTX 3080
-        return instanceTypeMap;
-    }
+    public Map<String, Double> instanceTypesWithPrice = new HashMap<>();
 
     private final LinkedList<String> logMessages = new LinkedList<>();
     private final TextArea logArea;
@@ -81,13 +74,10 @@ public class DashboardView extends VerticalLayout {
         var badges = new HorizontalLayout(buildBadge, costBadge);
 
         nameInput.setReadOnly(true);
-        instanceTypeComboBox.setItems(typeSpotPriceMap().keySet());
-        instanceTypeComboBox.setValue("g4dn.xlarge");
-        instanceTypeComboBox.addValueChangeListener(event -> maxSpotPrice.setValue(typeSpotPriceMap().get(event.getValue())));
-        maxSpotPrice.setMin(0.1);
-        maxSpotPrice.setMax(1.0);
-        maxSpotPrice.setStep(0.01);
-        maxSpotPrice.setValue(0.3);
+        instanceTypeComboBox.setItems(instanceTypesWithPrice.keySet());
+        instanceTypeComboBox.setRequired(true);
+        instanceTypeComboBox.addValueChangeListener(event -> maxSpotPrice.setValue(instanceTypesWithPrice.get(event.getValue())));
+        maxSpotPrice.setReadOnly(true);
         launchButton.addClickListener(clickEvent -> launchInstance());
         HorizontalLayout controls = new HorizontalLayout(nameInput, instanceTypeComboBox, maxSpotPrice, launchButton);
         controls.setAlignItems(Alignment.BASELINE);
@@ -265,6 +255,11 @@ public class DashboardView extends VerticalLayout {
                     costBadge.getElement().getThemeList().add("success");
                 }
                 costBadge.setText(CURRENT_MONTH_COST_PREFIX + cost);
+            }
+            if (event.getInstanceTypesWithPrice() != null && !event.getInstanceTypesWithPrice().isEmpty()) {
+                this.instanceTypesWithPrice = event.getInstanceTypesWithPrice();
+                instanceTypeComboBox.setItems(instanceTypesWithPrice.keySet());
+                instanceTypeComboBox.setValue(event.getInstanceTypesWithPrice().keySet().stream().findFirst().get());
             }
             ui.push();
         }));

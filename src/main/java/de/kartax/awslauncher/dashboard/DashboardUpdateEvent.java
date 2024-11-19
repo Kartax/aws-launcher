@@ -9,6 +9,7 @@ import software.amazon.awssdk.services.ec2.model.Volume;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -18,6 +19,7 @@ public class DashboardUpdateEvent extends ApplicationEvent {
     private List<Volume> volumes;
     private List<Snapshot> snapshots;
     private List<BigDecimal> currentMonthCost;
+    private Map<String, Double> instanceTypesWithPrice;
 
     public DashboardUpdateEvent(Object source) {
         super(source);

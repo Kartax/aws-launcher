@@ -15,8 +15,12 @@ import software.amazon.awssdk.services.ec2.model.*;
 import org.springframework.scheduling.TaskScheduler;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
 import java.util.List;
@@ -31,6 +35,12 @@ public class AwsBackgroundTask {
     private final Ec2Client ec2Client;
     private final AwsConfig awsConfig;
     private final BudgetsClient budgetsClient;
+
+    Map<String, Double> instanceSpotPrices = Map.of(
+            "g4dn.xlarge", 0.29,
+            "g4dn.2xlarge", 0.50,
+            "g6.2xlarge", 0.55,
+            "g5.2xlarge", 0.57);
 
     private ScheduledFuture<?> scheduledFuture;
 
@@ -94,6 +104,11 @@ public class AwsBackgroundTask {
         } catch (Exception e) {
             event.appendMessage(e.getMessage());
         }
+        try {
+            event.setInstanceTypesWithPrice(getInstanceTypesWithPrice());
+        } catch (Exception e) {
+            event.appendMessage(e.getMessage());
+        }
         eventService.broadcastEvent(event);
     }
 
@@ -140,5 +155,30 @@ public class AwsBackgroundTask {
                 .filter(budget -> budget.budgetName().equals(awsConfig.getBudgetName()))
                 .findFirst().map(budget -> List.of(budget.calculatedSpend().actualSpend().amount(), budget.budgetLimit().amount()))
                 .orElse(List.of(BigDecimal.ZERO, BigDecimal.ZERO));
+    }
+
+    public Map<String, Double> getInstanceTypesWithPrice() {
+        log.debug("getInstanceTypesWithPrice");
+        Map<String, Double> spotPrices = new HashMap<>();
+
+        DescribeSpotPriceHistoryRequest request = DescribeSpotPriceHistoryRequest.builder()
+                .startTime(Instant.now().minus(Duration.ofHours(1)))
+                .endTime(Instant.now())
+                .instanceTypes(
+                        InstanceType.G4_DN_XLARGE,
+                        InstanceType.G4_DN_2_XLARGE,
+                        InstanceType.G6_2_XLARGE,
+                        InstanceType.G5_2_XLARGE)
+                .build();
+
+        ec2Client.describeSpotPriceHistoryPaginator(request)
+                .stream()
+                .flatMap(response -> response.spotPriceHistory().stream())
+                .forEach(spotPrice -> {
+                    BigDecimal price = new BigDecimal(spotPrice.spotPrice()).setScale(2, RoundingMode.HALF_UP);
+                    spotPrices.put(spotPrice.instanceTypeAsString(), price.doubleValue());
+                });
+
+        return spotPrices;
     }
 }
