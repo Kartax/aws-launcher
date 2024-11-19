@@ -25,12 +25,12 @@ public class AwsService {
         this.awsBackgroundTask = awsBackgroundTask;
     }
 
-    public void launch(String name, String instanceType, Double maxSpotPrice){
+    public void launch(String name, String instanceType){
         log.debug("Launching EC2 instance: {} - {}", name, instanceType);
-        eventService.broadcastMessageOnlyEvent(this, "Launching " + name + " of type " + instanceType + " with max spot price " + maxSpotPrice);
+        eventService.broadcastMessageOnlyEvent(this, "Launching " + name + " of type " + instanceType );
 
         try {
-            String input = String.format("{\"instanceType\": \"%s\", \"maxSpotPrice\": \"%f\"}", instanceType, maxSpotPrice);
+            String input = String.format("{\"instanceType\": \"%s\"}", instanceType);
 
             StartExecutionRequest request = StartExecutionRequest.builder()
                     .stateMachineArn(STATE_MACHINE_ARN)

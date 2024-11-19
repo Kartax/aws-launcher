@@ -157,7 +157,7 @@ public class DashboardView extends VerticalLayout {
 
     private void launchInstance(){
         log.debug("launchInstance");
-        awsService.launch(nameInput.getValue(), instanceTypeComboBox.getValue(), maxSpotPrice.getValue());
+        awsService.launch(nameInput.getValue(), instanceTypeComboBox.getValue());
     }
 
     public synchronized void logMessage(String message) {
