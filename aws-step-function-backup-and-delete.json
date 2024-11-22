@@ -1,0 +1,150 @@
+{
+  "Comment": "State machine to retrieve EC2 instance volumes by instance-id, create a snapshot, delete old snapshots, and terminate instances",
+  "StartAt": "DescribeVolumes",
+  "States": {
+    "DescribeVolumes": {
+      "Type": "Task",
+      "Parameters": {
+        "Filters": [
+          {
+            "Name": "tag:Name",
+            "Values": [
+              "GamingRig"
+            ]
+          }
+        ]
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ec2:describeVolumes",
+      "Next": "CreateSnapshot",
+      "ResultSelector": {
+        "VolumeId.$": "$.Volumes[0].VolumeId"
+      }
+    },
+    "CreateSnapshot": {
+      "Type": "Task",
+      "Parameters": {
+        "VolumeId.$": "$.VolumeId",
+        "TagSpecifications": [
+          {
+            "ResourceType": "snapshot",
+            "Tags": [
+              {
+                "Key": "Name",
+                "Value": "GamingRig"
+              }
+            ]
+          }
+        ]
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ec2:createSnapshot",
+      "ResultPath": "$.Snapshot",
+      "Next": "WaitForSnapshot"
+    },
+    "WaitForSnapshot": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "DescribeSnapshot"
+    },
+    "DescribeSnapshot": {
+      "Type": "Task",
+      "Parameters": {
+        "SnapshotIds.$": "States.Array($.Snapshot.SnapshotId)"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ec2:describeSnapshots",
+      "ResultSelector": {
+        "SnapshotId.$": "$.Snapshots[0].SnapshotId",
+        "State.$": "$.Snapshots[0].State"
+      },
+      "ResultPath": "$.Snapshot",
+      "Next": "CheckSnapshotState"
+    },
+    "CheckSnapshotState": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Snapshot.State",
+          "StringEquals": "pending",
+          "Next": "WaitForSnapshot"
+        },
+        {
+          "Variable": "$.Snapshot.State",
+          "StringEquals": "completed",
+          "Next": "ListAllGamingRigSnapshots"
+        }
+      ],
+      "Default": "Fail"
+    },
+    "ListAllGamingRigSnapshots": {
+      "Type": "Task",
+      "Parameters": {
+        "Filters": [
+          {
+            "Name": "tag:Name",
+            "Values": [
+              "GamingRig"
+            ]
+          }
+        ]
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ec2:describeSnapshots",
+      "ResultPath": "$.AllSnapshots",
+      "Next": "FilterSnapshots"
+    },
+    "FilterSnapshots": {
+      "Type": "Pass",
+      "Parameters": {
+        "SnapshotsToDelete.$": "$.AllSnapshots.Snapshots[?(@.SnapshotId != $.Snapshot.SnapshotId)]"
+      },
+      "ResultPath": "$.SnapshotsToDelete",
+      "Next": "CheckSnapshotsToDelete"
+    },
+    "CheckSnapshotsToDelete": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.SnapshotsToDelete",
+          "IsPresent": true,
+          "Next": "DeleteSnapshotsMap"
+        }
+      ],
+      "Default": "DeleteVolume"
+    },
+    "DeleteSnapshotsMap": {
+      "Type": "Map",
+      "ItemsPath": "$.SnapshotsToDelete.SnapshotsToDelete",
+      "MaxConcurrency": 5,
+      "Iterator": {
+        "StartAt": "DeleteSnapshot",
+        "States": {
+          "DeleteSnapshot": {
+            "Type": "Task",
+            "Parameters": {
+              "SnapshotId.$": "$.SnapshotId"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:ec2:deleteSnapshot",
+            "End": true,
+            "ResultPath": "$.deletedSnapshotMap"
+          }
+        }
+      },
+      "Next": "DeleteVolume",
+      "ResultPath": "$.deleteSnapshotMap"
+    },
+    "DeleteVolume": {
+      "Type": "Task",
+      "Parameters": {
+        "VolumeId.$": "$.VolumeId"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:ec2:deleteVolume",
+      "Next": "Success"
+    },
+    "Fail": {
+      "Type": "Fail",
+      "Error": "SnapshotFailed",
+      "Cause": "Snapshot creation did not reach a completed state."
+    },
+    "Success": {
+      "Type": "Succeed"
+    }
+  }
+}
